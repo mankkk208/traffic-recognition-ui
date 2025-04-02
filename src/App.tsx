@@ -93,7 +93,7 @@ function App() {
   const [result, setResult] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const BaseURL = 'http://127.0.0.1:8000';
+  const BaseURL = 'http://10.50.151.157:8000';
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

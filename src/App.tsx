@@ -25,7 +25,7 @@ const UploadSection = styled.div`
 
 const ImagePreview = styled.div`
   margin-top: 10px;
-  
+
   img {
     max-width: 100%;
     height: auto;
@@ -90,10 +90,12 @@ const FileInput = styled.input`
 function App() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [bboxImageUrl, setBboxImageUrl] = useState<string>(''); // Image with bbox
   const [result, setResult] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const BaseURL = 'https://traffic-sign-recognition-backend-681792955708.us-central1.run.app';
+  //const BaseURL = 'http://localhost:8000';
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -102,6 +104,7 @@ function App() {
       const reader = new FileReader();
       reader.onload = (e) => {
         setPreviewUrl(e.target?.result as string);
+        setBboxImageUrl(''); // Reset bbox image on new upload
       };
       reader.readAsDataURL(file);
     }
@@ -112,7 +115,7 @@ function App() {
     formData.append("file", file);
 
     setResult("Đang xử lý...");
-    
+
     try {
       const response = await fetch(`${BaseURL}${endpoint}`, {
         method: "POST",
@@ -131,7 +134,6 @@ function App() {
       }
 
       const result = await response.json();
-      console.log("API Response:", result);
       return result;
     } catch (error) {
       console.error("API Error:", error);
@@ -151,6 +153,10 @@ function App() {
     try {
       const result = await callPredictionAPI(endpoint, uploadedImage);
       setResult(result.prediction || result.predicted_sign || "Không nhận diện được biển báo.");
+
+      if (result.image_base64) {
+        setBboxImageUrl(`data:image/jpeg;base64,${result.image_base64}`);
+      }
     } catch (error) {
       console.error("Prediction Error:", error);
       setResult(error instanceof Error ? error.message : 'Unknown error');
@@ -162,7 +168,7 @@ function App() {
   return (
     <Container>
       <Title>Traffic Sign Recognition</Title>
-      
+
       <form onSubmit={(e) => e.preventDefault()}>
         <UploadSection>
           <FileInput
@@ -171,11 +177,13 @@ function App() {
             onChange={handleImageUpload}
             accept="image/*"
           />
-          {previewUrl && (
-            <ImagePreview>
+          <ImagePreview>
+            {bboxImageUrl ? (
+              <img src={bboxImageUrl} alt="Detected with bbox" />
+            ) : previewUrl && (
               <img src={previewUrl} alt="Preview" />
-            </ImagePreview>
-          )}
+            )}
+          </ImagePreview>
         </UploadSection>
 
         <ButtonSection>
